@@ -1,0 +1,355 @@
+// 客户端服务器交互协议
+
+namespace CSProto;
+
+struct TouchInfo
+{
+	x:int;
+	y:int;
+	force:float;
+}
+
+// SHAKE子消息table
+table ShakeOnline
+{
+	id:string;
+	token:string;
+	server:string;
+	app:string;
+	type:int = 0; //类型, 云手机=0 试玩=1
+}
+table ShakeOnlineR
+{
+	code:int		= 0;
+	msg:string;
+	id:string;
+	token:string;
+	server:string;
+	app:string;
+	type:int = 0;
+}
+table ShakeOffline
+{
+	code:int		= 0;
+	msg:string;
+}
+table ShakeOfflineR
+{
+	code:int		= 0;
+	msg:string;
+}
+table ShakeKick
+{
+	code:int		= 0;
+	msg:string;
+}
+table ShakeKickR
+{
+	code:int		= 0;
+	msg:string;
+}
+// CONTROL子消息table
+table ControlMtu
+{
+	seg:[byte];
+}
+table ControlMtuR
+{
+	seg:[byte];
+}
+table ControlDelay
+{
+	time:string;
+	data:[byte];				// 提供测试不同大小数据包延迟的能力
+}
+table ControlDelayR
+{
+	time:string;
+	data:[byte];				// 提供测试不同大小数据包延迟的能力
+}
+table ControlApp
+{
+	app:string;
+}
+table ControlAppR
+{
+	code:int; 
+	msg:string;
+	app:string;
+}
+table ControlKillApp
+{
+	app:string;
+	
+}
+table ControlKillAppR
+{
+	code:int; 
+	msg:string;
+	app:string;
+}
+table ControlQueryAuth
+{
+	queryauthority:bool = 0;
+}
+table ControlQueryAuthR
+{
+	hasauthority:bool = 0;
+}
+table ControlAVFmt
+{
+	afmt:ubyte		= 0;		// 0 : aac
+	aprofile:ubyte	= 0;		// 0 : ld, 1 : lc
+	achannel:ubyte	= 2;		// 2 :双声道立体声
+	asmprate:ushort	= 44100;	// 采样率
+	abitrate:uint	= 131072;	// 声音码率
+	vfmt:ubyte		= 0;		// 0 : h264, 1 : hevc
+	vprofile:ubyte	= 0;		// 0 : baseline, 1 : main
+	vwidth:ushort	= 1024;		// 宽
+	vheight:ushort	= 576;		// 高
+	vfps:ushort		= 30;		// 帧率
+	vbitrate:uint	= 5242880;	// 视频码率
+}
+table ControlAVFmtR
+{
+	code:int 		= 0;
+	msg:string;
+	afmt:ubyte		= 0;		// 0 : aac
+	aprofile:ubyte	= 0;		// 0 : ld, 1 : lc
+	achannel:ubyte	= 2;		// 2 :双声道立体声
+	asmprate:uint	= 44100;	// 采样率
+	abitrate:uint	= 131072;	// 声音码率
+	vfmt:ubyte		= 0;		// 0 : h264, 1 : hevc
+	vprofile:ubyte	= 0;		// 0 : baseline, 1 : main
+	vwidth:ushort	= 1024;		// 宽
+	vheight:ushort	= 576;		// 高
+	vfps:ushort		= 30;		// 帧率
+	vbitrate:uint	= 5242880;	// 视频码率
+}
+table ControlAVTrans
+{
+	audio:bool		= true;
+	video:bool		= true;
+	subtitle:bool	= false;
+}
+table ControlAVTransR
+{
+	code:int 		= 0;
+	msg:string;
+	audio:bool		= true;
+	video:bool		= true;
+	subtitle:bool	= false;
+}
+table ControlIFrame
+{
+	reserved:byte	= 0;
+}
+table ControlAudio
+{
+	mode:ubyte		= 0;		// 0 : 软压		1 : 硬压
+	bitrate:uint	= 131072;
+}
+table ControlAudioR
+{
+	code:int 		= 0;
+	msg:string;
+	profile:ubyte	= 0;		// 0 : ld, 1 : lc
+	channel:ubyte	= 2;		// 2 :双声道立体声
+	smprate:uint	= 44100;	// 采样率
+	bitrate:uint	= 131072;	// 声音码率
+}
+table ControlVideo
+{
+	mode:ubyte		= 0;		// 画质等级，超清，高清，普清
+	bitrate:uint	= 5242880;
+	fps:uint		= 30;
+	maxiframe:uint		= 100;
+}
+table ControlVideoR
+{
+	code:int 		= 0;
+	msg:string;
+	profile:ubyte	= 0;		// 0 : baseline, 1 : main
+	width:ushort	= 1024;		// 宽
+	height:ushort	= 576;		// 高
+	fps:ushort		= 30;		// 帧率
+	bitrate:uint	= 5242880;	// 视频码率
+	bitmode:ubyte	= 0;		// 画质等级
+}
+
+table ControlScreen
+{
+	zoom:float = 0;	//屏幕分辨率缩放比例
+}
+
+table ControlTime
+{
+	time:int		= 0;
+}
+
+// INPUT子消息table
+table InputString
+{
+	str:string;
+}
+table InputGameController
+{
+	// 参见XINPUT_GAMEPAD
+	index:ubyte		= 0;
+	buttons:ushort	= 0;
+	lt:ubyte		= 0;
+	rt:ubyte		= 0;
+	lx:short		= 0;
+	ly:short		= 0;
+	rx:short		= 0;
+	ry:short		= 0;
+}
+table InputKeyboard
+{
+	key:ubyte		= 0;
+	pressed:bool	= false;
+}
+table InputMouseKey
+{
+	key:ubyte;
+	pressed:bool;
+}
+table InputMouseWheel
+{
+	x:short;
+	y:short;
+}
+table InputMouseMove
+{
+	x:short;
+	y:short;
+}
+table InputCursor
+{
+	x:float 		= 0.0;
+	y:float 		= 0.0;
+}
+
+
+
+table InputTouch
+{
+	index:int		= 0;	// 索引
+	type:ubyte		= 0;	// 0 : 按下，1 : 抬起， 2 : 移动，3 : 取消
+	touch:[TouchInfo];
+}
+table InputLocation
+{
+	longitude:float 			= 0.0;	// 经度
+	latitude:float				= 0.0;	// 纬度
+	altitude:float				= 0.0;	// 高度
+	floor:float					= 0.0;	// 第几层
+	horizontalaccuracy:float	= 0.0;	// 水平半径
+	verticalaccuracy:float		= 0.0;	// 垂直半径
+	speed:float					= 0.0;	// 移动速度
+	direction:float				= 0.0;	// 方向，相对于正北的角度
+	timestamp:string;					// 时间戳
+}
+table InputAccelerometer
+{
+	x:float			= 0.0; 	// 
+	y:float			= 0.0;	// 
+	z:float			= 0.0;	// 
+}
+table InputAltimeter
+{
+	altitude:float	= 0.0; 	// 相对高度，不是海拔，单位是米
+	pressure:float	= 0.0; 	// 气压，单位是KPa
+}
+table InputGyro
+{
+	x:float			= 0.0; 	// 
+	y:float			= 0.0; 	// 
+	z:float			= 0.0; 	// 
+}
+table InputMagnetometer
+{
+	x:float			= 0.0; 	// 
+	y:float			= 0.0; 	// 
+	z:float			= 0.0; 	// 
+}
+table InputPedometer
+{
+	startdate:string;				// 开始时间
+	enddate:string;					// 结束时间
+	steps:float				= 0.0;	// 步数
+	distance:float			= 0.0;	// 路程，单位为米
+	averageactivepace:float	= 0.0;	// 总体平均步调，单位为秒/米
+	currentpace:float		= 0.0;	// 当前平均步调，单位为秒/米
+	currentcadence:float	= 0.0;	// 每秒步数
+	floorsasc:float			= 0.0;	// 向上爬了几层楼
+	floorsdes:float			= 0.0;	// 向下爬了几层楼
+}
+table InputProximity
+{
+	proximity:bool;			// 是否靠近屏幕
+}
+table InputAmbientLight
+{
+	reserved:float;			// 占个位置，还没有想法
+}
+table InputTemperature
+{
+	temperature:float;		// 温度
+}
+table InputMoisture
+{
+	moisture:float;			// 湿度
+}
+
+// OUTPUT子消息table
+table OutputString
+{
+	msg:string;
+}
+table OutputScreen
+{
+	rotation:byte	= 0;	// 0 : 下    1 : 右    2 : 上    3 : 左
+	width:ushort	= 1280;
+	height:ushort	= 720;
+	fps:ushort		= 60;	// 注意：这里指的是屏幕刷新率
+}
+table OutputVibration
+{
+	// 参考XINPUT_VIBRATION
+	l:ushort		= 0;	// 左马达
+	r:ushort		= 0;	// 右马达
+}
+table OutputCursor
+{
+	x:float			= 0.0;	// 0.0-1.0，相对位置
+	y:float			= 0.0;	// 0.0-1.0，相对位置
+}
+
+// AV子消息table
+table AVAudio
+{
+	data:[byte];
+}
+table AVVideo
+{
+	data:[byte];
+}
+table AVSubTitle
+{
+	data:string;
+}
+
+// AUTH子消息table
+table AuthList
+{
+	data:string;			// 黑白名单
+	errorcode:int;
+}
+//分辨率级别
+table ResolutionLevel
+{
+	level:int         =2;//分辨率级别
+	width:ushort		=480;
+	height:ushort       =800;
+}
