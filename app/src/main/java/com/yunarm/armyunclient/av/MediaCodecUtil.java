@@ -10,6 +10,9 @@ import android.view.SurfaceHolder;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+/**
+ * 用于硬件解码(MediaCodec)H264的工具类
+ */
 public class MediaCodecUtil {
 
     private String TAG = "MediaCodecUtil";

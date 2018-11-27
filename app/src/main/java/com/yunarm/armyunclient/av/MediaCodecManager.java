@@ -13,10 +13,6 @@ public class MediaCodecManager {
     private MediaCodecUtil util;
     //文件读取完成标识
     private boolean isFinish = false;
-    //这个值用于找到第一个帧头后，继续寻找第二个帧头，如果解码失败可以尝试缩小这个值
-    private static final int FRAME_MIN_LEN = 20;
-    //一般H264帧大小不超过200k,如果解码失败可以尝试增大这个值
-    private static final int FRAME_MAX_LEN = 300 * 1024;
     //根据帧率获取的解码每帧需要休眠的时间,根据实际帧率进行操作
     private static final int PRE_FRAME_TIME = 1000 / 25;
     //按帧用来缓存h264数据
@@ -123,7 +119,7 @@ public class MediaCodecManager {
         }
     }
 
-    //手动终止读取文件，结束线程
+    //结束线程
     public void stopThread() {
         isFinish = true;
     }
