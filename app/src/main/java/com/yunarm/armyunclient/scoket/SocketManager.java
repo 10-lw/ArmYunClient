@@ -1,10 +1,14 @@
 package com.yunarm.armyunclient.scoket;
 
 
-import android.util.Log;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 
+import com.armnet.player.avpkg.ffmpeg.Player;
 import com.google.flatbuffers.FlatBufferBuilder;
+import com.yunarm.armyunclient.av.AACAudioCodecManager;
 import com.yunarm.armyunclient.av.MediaCodecManager;
 import com.yunarm.armyunclient.av.MediaCodecUtil;
 
@@ -15,6 +19,7 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 
 import CSProto.ControlAVTrans;
+import CSProto.ControlIFrame;
 import CSProto.OutputScreen;
 import CSProto.ShakeKick;
 import CSProto.ShakeOnline;
@@ -32,17 +37,38 @@ public class SocketManager {
     private static OutputStream outputStream;
     private static boolean start = false;
     private static MediaCodecManager codecManager;
+    private AACAudioCodecManager audioCodecManager;
+    private boolean hardDecode = true;
+    private Player videoDecodeManager;
+    private Surface surface;
 
-    public  void startLoginSocket(SurfaceHolder surfaceHolder) {
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
+    public void startLoginSocket(SurfaceHolder surfaceHolder) {
         try {
             socket = new Socket("192.168.1.52", 8888);
             inputStream = socket.getInputStream();
             outputStream = socket.getOutputStream();
+            surface = surfaceHolder.getSurface();
 
-            MediaCodecUtil util = new MediaCodecUtil(surfaceHolder);
-            util.startCodec();
-            codecManager = new MediaCodecManager(util);
-            codecManager.startDecodeThread();
+            if (hardDecode) {
+                //硬解视频
+                MediaCodecUtil util = new MediaCodecUtil(surfaceHolder);
+                util.startCodec();
+                codecManager = new MediaCodecManager(util);
+                codecManager.startDecodeThread();
+            } else {
+                videoDecodeManager = new Player();
+//                videoDecodeManager.startDecodeThread();
+                videoDecodeManager.initDecode();
+                videoDecodeManager.setSurfaceView(surface);
+                videoDecodeManager.setEventHandler((buffer, len) -> {
+
+                });
+
+            }
+
+            audioCodecManager = new AACAudioCodecManager();
+            audioCodecManager.startDecodeThread();
 
             onRequestShakeOnLine();
 
@@ -57,13 +83,15 @@ public class SocketManager {
 
                 //接收协议体
                 byte[] body = readData(inputStream, len);
-                Log.d("tag", "=====type: " + type + ", subtype: " + subtype + ", len: " + len);
+//                Log.d("tag", "=====type: " + type + ", subtype: " + subtype + ", len: " + len);
                 if (len > 0) {
                     handleSocketByType(type, subtype, body);
                 }
             }
 
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -151,7 +179,7 @@ public class SocketManager {
 
     private void onShakeKick(byte[] body) {
         ShakeKick shakeKick = ShakeKick.getRootAsShakeKick(ByteBuffer.wrap(body));
-        Log.d("tag", "========code: " + shakeKick.code() + " msg: " + shakeKick.msg());
+//        Log.d("tag", "========code: " + shakeKick.code() + " msg: " + shakeKick.msg());
     }
 
     private void onScreenOrientationChange(byte[] body) {
@@ -159,18 +187,37 @@ public class SocketManager {
         int height = screen.height();
         int width = screen.width();
         byte rotation = screen.rotation();
-        Log.d("tag", "=========onScreenOrientationChange====height: " + height + " width: " + width + " rotation: " + rotation);
+//        Log.d("tag", "=========onScreenOrientationChange====height: " + height + " width: " + width + " rotation: " + rotation);
 
     }
-
+    //一般H264帧大小不超过200k,如果解码失败可以尝试增大这个值
+    private static int MAX_FRAME_BUF_LEN = 300 * 1024;
+    byte[] frameBuffer = new byte[MAX_FRAME_BUF_LEN];
     private void onAvVideoReply(byte[] body) {
         int fpTpye = body[0];
-        Log.d("tag", "=======onAvVideoReply========type: " + fpTpye);
-        codecManager.addFrame(body);
+//        Log.d("tag", "=======onAvVideoReply========type: " + fpTpye);
+        if (hardDecode) {
+            System.arraycopy(body, 1 ,frameBuffer, 0 ,body.length -1);
+            codecManager.addFrame(frameBuffer);
+        } else {
+//            videoDecodeManager.addFrame(body);
+            boolean decode = videoDecodeManager.decode(body, body.length);
+            if (!decode) {
+
+            }
+        }
+    }
+
+    private void requestIFrame() {
+        FlatBufferBuilder bufferBuilder = new FlatBufferBuilder();
+//        ControlIFrame.createControlIFrame()
     }
 
     private void onAvAudioReply(byte[] body) {
-        Log.d("tag", "=======onAvAudioReply========" + body.length);
+//        Log.d("tag", "=======onAvAudioReply========" + body.length);
+//        if (body[0] == 1) {
+            audioCodecManager.addAudioData(body);
+//        }
 
     }
 

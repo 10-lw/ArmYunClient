@@ -3,6 +3,7 @@ package com.yunarm.armyunclient.av;
 import android.util.Log;
 
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Description : 读取 H264文件送入解码器解码线程
@@ -16,7 +17,7 @@ public class MediaCodecManager {
     //根据帧率获取的解码每帧需要休眠的时间,根据实际帧率进行操作
     private static final int PRE_FRAME_TIME = 1000 / 25;
     //按帧用来缓存h264数据
-    private LinkedList<byte[]> frameList;
+    private ConcurrentLinkedQueue<byte[]> frameList;
     //缓存最多的帧数
     private static final int MAX_FRAME_SIZE = 100;
 
@@ -28,7 +29,7 @@ public class MediaCodecManager {
      */
     public MediaCodecManager(MediaCodecUtil util) {
         this.util = util;
-        frameList = new LinkedList<>();
+        frameList = new ConcurrentLinkedQueue<>();
     }
 
     /**
@@ -104,19 +105,18 @@ public class MediaCodecManager {
     public void addFrame(byte[] frame) {
         if (frameList != null) {
             synchronized (frameList) {
-                int pos = frameList.size();
-                frameList.add(pos, frame);
+                frameList.add(frame);
             }
         }
 
         //当长度多于MAX_FRAME_SIZE时,休眠2秒，避免OOM
-        if (frameList.size() > MAX_FRAME_SIZE) {
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+//        if (frameList.size() > MAX_FRAME_SIZE) {
+//            try {
+//                Thread.sleep(2000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//        }
     }
 
     //结束线程
@@ -140,7 +140,7 @@ public class MediaCodecManager {
             while (!isFinish || frameList.size() > 0) {
                 if (frameList != null && frameList.size() > 0) {
                     synchronized (frameList) {
-                        byte[] frame = frameList.removeFirst();
+                        byte[] frame = frameList.poll();
                         onFrame(frame, 0, frame.length);
                     }
                 }
